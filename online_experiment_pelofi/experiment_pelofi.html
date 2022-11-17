@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Melody experiment demo</title>
+    <script src="https://unpkg.com/jspsych@7.3.1"></script> <!--loads jspsych library remotely-->
+    <script src="https://unpkg.com/@jspsych/plugin-audio-keyboard-response@1.1.2"></script> <!--loads audio keyboard response-->
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script> <!--plugin for printing a message-->
+    <script src="https://unpkg.com/@jspsych/plugin-audio-slider-response@1.1.2"></script> 
+    <link href="https://unpkg.com/jspsych@7.3.1/css/jspsych.css" rel="stylesheet" type="text/css" /> <!--stylesheet for visual aesthetics-->
+  </head>
+  <body></body>
+
+  <!-- initializes jspsych by assigning it to a constant-->
+  <script>
+        const jsPsych = initJsPsych({
+      show_progress_bar: true,
+      on_finish: function() {
+        jsPsych.data.displayData('csv');
+      }
+    });
+
+
+    // generate a random subject ID with 15 characters
+    var subject_id = jsPsych.randomization.randomID(15);
+
+    // pick a random condition for the subject at the start of the experiment
+    var condition_assignment = 'grammar 1'
+
+    // record the condition assignment in the jsPsych data
+    // this adds a property called 'subject' and a property called 'condition' to every trial
+    jsPsych.data.addProperties({
+      subject: subject_id,
+      condition: condition_assignment
+    });
+
+    var timeline = [];
+
+    var welcome = {
+        /*plugin loaded to display text and make text disappear with next key stroke*/ 
+      type: jsPsychHtmlKeyboardResponse, /*put type of plugin here*/
+      stimulus: 'Welcome to the experiment. You will listen to a series of melodies and make decisions about them. </p> Press any key to begin. </p> (Note: this is a demo and uses fewer melodies than would be in the real experiment.)'
+    };
+    timeline.push(welcome)
+
+    var soundcheck = {
+        /*plugin loaded to display text and make text disappear with next key stroke*/ 
+      type: jsPsychAudioKeyboardResponse, /*put type of plugin here*/
+      stimulus: "exposure_highstart/stream1.mp3",
+      prompt: 'Please make sure that you can hear the melody clearly. Once you are ready, press any key to continue.'
+    };
+    timeline.push(soundcheck)
+
+    var instructions_exposure = {
+        /*plugin loaded to display text and make text disappear with next key stroke*/ 
+      type: jsPsychHtmlKeyboardResponse, /*put type of plugin here*/
+      stimulus: 'Please listen carefully to the following set of melodies and decide whether the each melody ends on a high or low note. This part of the experiment will take about 30 minutes. <p>Press any key to continue.</p>'
+    };
+    timeline.push(instructions_exposure)
+
+
+    var exposure_stimuli = [/*these aren't actually the correct responses
+    but I should make them correct later as a way of making sure people are paying attention*/
+    { stimulus: "exposure_highstart/stream1.mp3", correct_response: 'l'}, 
+    { stimulus: "exposure_highstart/stream2.mp3", correct_response: 'l'},
+    { stimulus: "exposure_highstart/stream3.mp3", correct_response: 'l'},
+    { stimulus: "exposure_highstart/stream4.mp3", correct_response: 'l'},
+    { stimulus: "exposure_highstart/stream5.mp3", correct_response: 'l'},
+    { stimulus: "exposure_lowstart/stream1.mp3", correct_response: 'h'}, 
+    { stimulus: "exposure_lowstart/stream2.mp3", correct_response: 'h'}, 
+    { stimulus: "exposure_lowstart/stream3.mp3", correct_response: 'h'}, 
+    { stimulus: "exposure_lowstart/stream4.mp3", correct_response: 'h'}, 
+    { stimulus: "exposure_lowstart/stream5.mp3", correct_response: 'h'}, 
+
+  ];
+
+  
+  var test_stimuli = [
+    { stimulus: "forcedchoice/Bb3C4/test_1correct1.mp3", correct_response: '1'}, 
+    { stimulus: "forcedchoice/Bb3C4/test_1correct2.mp3", correct_response: '1'}, 
+    { stimulus: "forcedchoice/Bb3C4/test_1correct3.mp3", correct_response: '1'}, 
+    { stimulus: "forcedchoice/Bb3C4/test_1correct4.mp3", correct_response: '1'}, 
+    { stimulus: "forcedchoice/E4C4/test_1correct1.mp3", correct_response: '1'}, 
+    { stimulus: "forcedchoice/E4C4/test_1correct2.mp3", correct_response: '1'}, 
+  ];
+
+  var slider_volume_stimuli = [
+    { stimulus: "slider_volume/slider_volume1.mp3"}, 
+    { stimulus: "slider_volume/slider_volume2.mp3"}, 
+    { stimulus: "slider_volume/slider_volume3.mp3"}, 
+  ]
+
+  var slider_duration_stimuli = [
+    {stimulus: "slider_duration/test_interpret2.mp3"},
+    {stimulus: "slider_duration/test_interpret3.mp3"},
+    {stimulus: "slider_duration/test_interpret4.mp3"},
+  ]
+
+    var exposure_trial = {
+        type: jsPsychAudioKeyboardResponse,
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        /*response_ends_trial: true,*/
+        prompt: 'Did the melody end on a high note or low note? Press <b>H</b> for high, <b>L</b> for low.',
+        choices: ['h', 'l']
+    };
+
+    var exposure_procedure = {
+      timeline: [exposure_trial],
+      timeline_variables: exposure_stimuli,
+      repetitions: 1,
+      randomize_order: true 
+    }
+    timeline.push(exposure_procedure)
+
+    var instructions_forcedchoice = {
+        /*plugin loaded to display text and make text disappear with next key stroke*/ 
+      type: jsPsychHtmlKeyboardResponse, /*put type of plugin here*/
+      stimulus: 'In this part of the experiment, you will presented with two melodies. Please choose the melody that you find the most <b>musically coherent</b>. <p>Press any key to continue.</p>'
+    };
+    timeline.push(instructions_forcedchoice)
+  
+    var test_trial = {
+        type: jsPsychAudioKeyboardResponse,
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        
+        prompt: 'Did you prefer the first melody (press <b>1</b>) or the second melody (press <b>2</b>)?',
+        choices: ['1', '2'],
+        data: {
+          task: 'response',
+          correct_response: jsPsych.timelineVariable('correct_response')
+        },
+        on_finish: function(data){
+          data.correct = jsPsych.pluginAPI.compareKeys(data.response, data.correct_response);
+        }
+    };
+
+    var test_procedure = {
+      timeline: [test_trial],
+      timeline_variables: test_stimuli,
+      repetitions: 1,
+      randomize_order: true 
+    }
+    timeline.push(test_procedure)
+
+    var instructions_slider = {
+        /*plugin loaded to display text and make text disappear with next key stroke*/ 
+      type: jsPsychHtmlKeyboardResponse, /*put type of plugin here*/
+      stimulus: 'In the final part of this experiment, you will listen to melodies where the <b>duration</b> or <b>volume</b> of some notes has been manipulated. For each melody, try to judge whether the length of the manipulated length of the notes is appropriate in the context of the melody. <p>Press any key to continue.</p>'
+    };
+    timeline.push(instructions_slider)
+
+
+    var slider_volume_trial = {
+        type: jsPsychAudioSliderResponse,
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        
+        prompt: 'The <b>volume</b> of one of the notes in this melody has been manipulated. How appropriate is this new volume if we want a musical interpretation of the melody?', /*need to define where the target note is*/
+        labels: ['Too quiet', 'Just right', 'Too loud'],
+
+    };
+
+    var slider_volume_procedure = {
+      timeline: [slider_volume_trial],
+      timeline_variables: slider_volume_stimuli,
+      repetitions: 1,
+      randomize_order: true 
+    }
+    timeline.push(slider_volume_procedure)
+
+    var slider_duration_trial = {
+        type: jsPsychAudioSliderResponse,
+        stimulus: jsPsych.timelineVariable('stimulus'),
+        
+        prompt: 'The <b>duration</b> of one of the notes in this melody has been manipulated. How appropriate is this new duration if we want a musical interpretation of the melody?', /*need to define where the target note is*/
+        labels: ['Too short', 'Just right', 'Too long'],
+
+    };
+
+    var slider_duration_procedure = {
+      timeline: [slider_duration_trial],
+      timeline_variables: slider_duration_stimuli,
+      repetitions: 1,
+      randomize_order: true 
+    }
+    timeline.push(slider_duration_procedure)
+
+
+    var finish_screen = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: 'You have reached the end of the experiment. Thank you for participating.'
+    }
+
+
+    jsPsych.run(timeline); /*function to run the trial, takes a timeline as an argument and in this case it's just hello world*/
+  
+  </script>
+</html>
